@@ -13,8 +13,12 @@ const nodegit = require(p);
   try {
     console.info('nodegit version', nodegit.version);
     console.info('open repo...')
-    const repo = await nodegit.Repository.open('$root_dir');
-    console.log('nodegit test success');
+    // 直接 require .node 拿到的是原始 addon，未经 lib/nodegit.js 的 promisify 包装，
+    // 所以这里必须用 callback 形式调用
+    const repo = await new Promise((resolve, reject) => {
+      nodegit.Repository.open('$root_dir', (err, repo) => err ? reject(err) : resolve(repo));
+    });
+    console.log('nodegit test success', !!repo);
   } catch (err) {
     console.error('nodegit test failed', err);
     process.exit(1);

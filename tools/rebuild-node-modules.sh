@@ -208,11 +208,11 @@ export JOBS=$(nproc)
     node-pty@1.0.0 \
     native-watchdog \
     @vscode/spdlog@0.13.11 \
-    nodegit \
+    nodegit@0.28.0-alpha.36 \
     @vscode/sqlite3 \
     --ignore-scripts \
     --registry=https://registry.npmmirror.com \
-    --nodegit_binary_host_mirror=https://npmmirror.com/mirrors/nodegit/v0.27.0/
+    --nodegit_binary_host_mirror=https://npmmirror.com/mirrors/nodegit/v0.28.0-alpha.36/
 )
 
 # ── 逐模块重编译 ──────────────────────────
