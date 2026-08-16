@@ -228,10 +228,10 @@ configure_args=(
   --registry=https://registry.npmmirror.com
 )
 
-build_nodegit
+electron_gyp_build "nodegit"
 node_gyp_build "extract-file-icon"
 node_gyp_build "native-keymap"
-node_gyp_build "node-pty"       # node build
+electron_gyp_build "node-pty"       # node build
 node_gyp_build "native-watchdog"
 (cd "@vscode" && electron_gyp_build "spdlog")
 (cd "@vscode" && electron_gyp_build "sqlite3")
