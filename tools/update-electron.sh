@@ -27,5 +27,6 @@ fi
 
 if [ -d "$root_dir/resources" ]; then
     cd "$root_dir/electron"
+    rm -rf resources
     ln -sr ../resources resources
 fi
