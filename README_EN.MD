@@ -11,9 +11,9 @@
 ----
 
 [![Node.js CI](https://github.com/msojocs/wechat-devtools-linux/actions/workflows/release.yml/badge.svg)](https://github.com/msojocs/wechat-devtools-linux/actions/workflows/release.yml)
-[![wechat-tools](https://img.shields.io/badge/wechat--devtools-2.01.2510280-blue)](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html)
-[![nwjs](https://img.shields.io/badge/nwjs-0.55.0-green)](https://nwjs.io/downloads/)
-[![node](https://img.shields.io/badge/node-16.20.2-orange)](https://nodejs.org/en/)
+[![wechat-tools](https://img.shields.io/badge/wechat--devtools-2.02.2608060-blue)](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html)
+[![electron](https://img.shields.io/badge/electron-36.6.0-green)](https://www.electronjs.org/releases/stable)
+[![node](https://img.shields.io/badge/node-22.16.0-orange)](https://nodejs.org/en/)
 [![wx-compiler](https://img.shields.io/badge/wx--compiler-0.1.7-pink)](https://github.com/msojocs/wx-compiler)
 
   This is a Linux version of the WeChat DevTools.
@@ -33,7 +33,7 @@ The project is adapted from https://github.com/dragonation/wechat-devtools/ and 
 
 # Progress
 
-The current tool can build the latest version `2.01.2510280` on Linux, with CLI mode support.
+The current tool can build the latest version `2.02.2608060` on Linux, with CLI mode support.
 You can now modify fonts directly in the settings interface by entering the font name manually.
 
 `conf/config.latest.json` provides a `latest` experimental profile to freeze the latest NW.js / Node / native module version combinations; enable it by adding `--profile latest` to the script.

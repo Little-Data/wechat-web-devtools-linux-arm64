@@ -9,7 +9,7 @@ on:
   push:
     tags:        
       - v*
-    branches: [ master, dev, ci, skyline]
+    branches: [ master, dev, ci, electron]
     paths-ignore:
       - 'README.MD'
       - 'CHANGELOG.MD'
