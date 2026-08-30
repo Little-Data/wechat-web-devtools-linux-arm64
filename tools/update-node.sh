@@ -48,7 +48,7 @@ rm -rf $extractPath
 if [ -d "$root_dir/electron" ];then
   cd "$root_dir/electron"
   rm -f node node.exe node-18.exe
-  ln -s ../node/bin/node node
+  cp ../node/bin/node node
   ln -s node node.exe
   ln -s node node-18.exe
 fi

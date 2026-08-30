@@ -7,6 +7,7 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
   [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
 done
 root_dir="$( cd -P "$( dirname "$SOURCE" )"/.. >/dev/null 2>&1 && pwd )"
+package_dir="$root_dir/resources/app.asar.unpacked"
 
 cd $root_dir/bin
 
@@ -17,8 +18,9 @@ else
   DATA_DIR=$XDG_CONFIG_HOME
 fi
 
+
 # 获取App名称
-APP_NAME=$( cat "$root_dir/resources/app/package.json" | grep -Eo 'name":".*","main' )
+APP_NAME=$( cat "$package_dir/package.json" | grep -Eo 'name":".*","main' )
 APP_NAME=${APP_NAME//name\":\"/}
 APP_NAME=${APP_NAME//\",\"main/}
 
@@ -28,7 +30,7 @@ export USERPROFILE="$APPDATA"
 export PATH="$root_dir/electron:$PATH"
 mkdir -p "$APPDATA/Default"
 
-"$root_dir/electron/node" "$root_dir/resources/app/js/common/cli/index.js" "$@"
+"$root_dir/electron/node" "$package_dir/js/common/cli/index.js" "$@"
 if [ ! -z "$APPIMAGE" ];then
   # AppImage在程序退出后会删除相关程序文件，导致无法启动
   tail -f /etc/issue

@@ -5,7 +5,7 @@
         set: function(value) {
             if (value.includes('AppData/Local')) {
                 value = value.replace('AppData/Local', '.config')
-                value = value.replace(/User Data\/.*?\//, '')
+                value = value.replace(/User Data\//, '')
                 // value = value.replace('~', require('os').homedir())
             }
             this._userDirPath = value

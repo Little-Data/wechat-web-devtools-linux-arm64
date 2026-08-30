@@ -20,7 +20,7 @@ unzip -q "$local_path" -d "$root_dir/electron"
 
 if [ -f "$root_dir/node/bin/node" ]; then
     cd "$root_dir/electron"
-    ln -sr ../node/bin/node node
+    cp ../node/bin/node node
     ln -s node node.exe
     ln -s node node-18.exe
 fi

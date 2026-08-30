@@ -16,12 +16,12 @@ else
 fi
 
 # 获取App名称
-APP_NAME=$( cat "$root_dir/resources/app/package.json" | grep -Eo 'name":".*","main' )
+APP_NAME=$( cat "$root_dir/resources/app.asar.unpacked/package.json" | grep -Eo 'name":".*","main' )
 APP_NAME=${APP_NAME//name\":\"/}
 APP_NAME=${APP_NAME//\",\"main/}
 
 export WECHAT_DEVTOOLS_DIR="$root_dir/electron"
-export APPDATA="$DATA_DIR/$APP_NAME"
+export APPDATA="$DATA_DIR/$APP_NAME/app"
 export PATH="$root_dir/node/bin:$root_dir/electron:$PATH"
 export USERPROFILE=$APPDATA
 
@@ -44,7 +44,7 @@ else
   clean_cache;
 fi;
 
-USERDATADIR="$APPDATA"
+USERDATADIR="$DATA_DIR/$APP_NAME/user"
 
 # 缩放设置，测试用 --force-device-scale-factor=1.5
 # "$@"参数
