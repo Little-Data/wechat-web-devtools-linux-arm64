@@ -76,7 +76,7 @@ if [ $CURRENT_STEP == $INSTALL_GYP_SUCCESS ];then
   else
     "$root_dir/tools/update-electron.sh" $@
   fi
-  step_switch $INSTALL_NW_SUCCESS
+  step_switch $INSTALL_ELECTRON_SUCCESS
 fi
 
 # 7z旧版本解压不正常
@@ -88,7 +88,7 @@ fi
 # ln -s 7zz 7z
 # export PATH="$root_dir/tmp/7z:$PATH"
 
-if [ $CURRENT_STEP == $INSTALL_NW_SUCCESS ];then
+if [ $CURRENT_STEP == $INSTALL_ELECTRON_SUCCESS ];then
   notice "==========Initializing wechat-devtools package=========="
   if [[ $@ == *version* ]];then
     # 参数有版本号，优先级高，清空TARGET_VERSION
@@ -98,7 +98,7 @@ if [ $CURRENT_STEP == $INSTALL_NW_SUCCESS ];then
     # 参数没有版本号，获取
     echo "参数没有版本号"
     VERSION_DATA=$(node "$root_dir/tools/parse-config.js" --get-devtools-version $@)
-    TARGET_VERSION="version=${VERSION_DATA}"
+    TARGET_VERSION="$VERSION_DATA"
   fi
   echo "TARGET_VERSION: $TARGET_VERSION"
   if [ ! -f "$root_dir/resources/app/package.json" ];then
@@ -108,8 +108,9 @@ if [ $CURRENT_STEP == $INSTALL_NW_SUCCESS ];then
     step_switch $INSTALL_WECHAT_SUCCESS
   else
     # 装了，获取已安装版本
-    DEVTOOLS_VERSION=$( cat "$root_dir/resources/app/package.json" | grep -m 1 -Eo "\"[0-9]{1}\.[0-9]{2}\.[0-9]+" )
-    DEVTOOLS_VERSION="${DEVTOOLS_VERSION//\"/}"
+    DEVTOOLS_VERSION=$(node -p \
+      "JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8')).version" \
+      "$root_dir/resources/app/package.json")
     # 已安装, 比较目标版本
     if [ "$TARGET_VERSION" != "$DEVTOOLS_VERSION" ];then
       "$root_dir/tools/update-wechat-devtools.sh" $@
@@ -119,29 +120,25 @@ if [ $CURRENT_STEP == $INSTALL_NW_SUCCESS ];then
 fi
 
 if [ $CURRENT_STEP == $INSTALL_WECHAT_SUCCESS ];then
-  notice "Patching wechat-devtools package name"
-  "$root_dir/tools/fix-package-name.js"
-
   notice "Patching wechat-devtools editor selection autocopy"
   "$root_dir/tools/fix-selection-copy-node.js"
-
-  notice "Patching wechat-devtools CLI supports"
-  "$root_dir/tools/fix-cli.sh"
-
-  # notice "Patching wechat-devtools core.wxvpkg"
-  # "$root_dir/tools/fix-core.sh"
   step_switch $INSTALL_FIX_SUCCESS
 fi
 if [ $CURRENT_STEP == $INSTALL_FIX_SUCCESS ];then
   notice "Rebuilding wechat-devtools node modules"
-  nwjs_version=$(node "$root_dir/tools/parse-config.js" --get-nwjs-version $@)
   "$root_dir/tools/rebuild-node-modules.sh" $@
   step_switch $INSTALL_REBUILD_SUCCESS
 fi
 
 if [ $CURRENT_STEP == $INSTALL_REBUILD_SUCCESS ];then
+  notice "Patching wechat-devtools package name"
+  "$root_dir/tools/fix-package-name.js"
+
+  notice "Patching wechat-devtools CLI supports"
+  "$root_dir/tools/fix-cli.sh"
+
   notice "Patching wechat-devtools"
-  "$root_dir/tools/fix-menu.sh"
+  "$root_dir/tools/fix-compiler.sh"
 
   notice "Patching Other"
   "$root_dir/tools/fix-other.sh" $@

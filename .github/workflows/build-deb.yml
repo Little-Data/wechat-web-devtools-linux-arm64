@@ -1,10 +1,6 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
-
 name: Build DEB Package
 
 on:
-  workflow_dispatch:
   workflow_call:
 
 jobs:
@@ -15,52 +11,58 @@ jobs:
     strategy:
       matrix:
         ARCH: ['x86_64']
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Download artifacts
         uses: actions/download-artifact@v4
 
       - name: Generate TAG
-        id: Tag
+        id: tag
+        env:
+          IS_TAG: ${{ startsWith(github.ref, 'refs/tags/') }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           tag='continuous'
           name='Continuous Build'
-          if [ 'true' == ${{ startsWith(github.ref, 'refs/tags/') }} ];then
-            tag='${{ github.ref_name }}'
-            name='${{ github.ref_name }}'
+          if [[ "$IS_TAG" == 'true' ]]; then
+            tag="$REF_NAME"
+            name="$REF_NAME"
           fi
           echo "tag result: $tag - $name"
-          echo "::set-output name=tag::$tag"
-          echo "::set-output name=name::$name"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
       # https://stackoverflow.com/questions/61096521/how-to-use-gpg-key-in-github-actions
       # gpg --generate-key
       # gpg --export-secret-keys YOUR_ID_HERE | base64 > private.key
       - name: Configure GPG Key
+        id: gpg
         run: |
           echo -n "$GPG_SIGNING_KEY" | base64 --decode | gpg --import
           gpg --list-secret-keys jiyecafe@gmail.com
+          echo "sign=true" >> "$GITHUB_OUTPUT"
         env:
           GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
 
       - name: Prepare
         run: |
-          sudo apt update -y
+          sudo apt-get update
           sudo apt-get install -y build-essential fakeroot devscripts debhelper # debmake lintian pbuilder
 
       - name: Build Deb Package
+        env:
+          BUILD_VERSION: ${{ steps.tag.outputs.tag }}
+          SIGN_DEB: ${{ steps.gpg.outputs.sign }}
+          WINE: 'false'
         run: |
-          export BUILD_VERSION=${{ steps.tag.outputs.tag }}
-          ls -l
           mkdir -p tmp/build
-          export WINE=false
           tools/build-prepare.sh
-          env WINE=false tools/build-deepin.sh ${{ steps.tag.outputs.tag }}
+          tools/build-deepin.sh "${{ steps.tag.outputs.tag }}"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          # Artifact name
           name: wechat-devtools-deb-${{ matrix.ARCH }}.build
           path: tmp/build
+          if-no-files-found: error
+          compression-level: 0

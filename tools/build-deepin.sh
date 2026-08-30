@@ -9,8 +9,9 @@ fail() {
 
 
 root_dir=$(cd `dirname $0`/.. && pwd -P)
-DEVTOOLS_VERSION=$( cat "$root_dir/package.nw/package.json" | grep -m 1 -Eo "\"[0-9]{1}\.[0-9]{2}\.[0-9]+" )
-DEVTOOLS_VERSION="${DEVTOOLS_VERSION//\"/}"
+DEVTOOLS_VERSION=$("$root_dir/electron/node" -p \
+  "JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8')).version" \
+  "$root_dir/resources/app/package.json")
 echo $BUILD_VERSION
 if [ -n "$1" ];then
   export BUILD_VERSION=$1
@@ -86,12 +87,17 @@ mkdir -p "$build_dir/usr/share/applications" "$build_dir/usr/share/icons/hicolor
 # \cp -rf "$base_dir/entries/icons/hicolor/scalable/apps/$package_name.svg" "$build_dir/usr/share/icons/hicolor/scalable/apps/$package_name.svg"
 
 # 主体文件
-cp -r "$root_dir/package.nw" "$base_dir/files/bin/package.nw"
-cp -r "$root_dir/nwjs" "$base_dir/files/bin/nwjs"
+cp -a "$root_dir/electron" "$base_dir/files/bin/electron"
+cp -a "$root_dir/resources" "$base_dir/files/bin/resources"
 if [ -f "$root_dir/node/bin/node" ];then
-  rm -rf "$base_dir/files/bin/nwjs"/{node,node.exe}
-  cp "$root_dir/node/bin/node" "$base_dir/files/bin/nwjs/node"
-  cd "$base_dir/files/bin/nwjs/" && ln -s "node" "node.exe"
+  rm -f "$base_dir/files/bin/electron/node" "$base_dir/files/bin/electron/node.exe" "$base_dir/files/bin/electron/node-18.exe"
+  install -m 755 "$root_dir/node/bin/node" "$base_dir/files/bin/electron/node"
+  ln -s node "$base_dir/files/bin/electron/node.exe"
+  ln -s node "$base_dir/files/bin/electron/node-18.exe"
+fi
+if [ ! -x "$base_dir/files/bin/electron/node" ]; then
+  fail "Electron运行时缺少Node可执行文件"
+  exit 1
 fi
 # chown -R root:root "$base_dir"
 
@@ -105,5 +111,9 @@ if [[ "$WINE" == 'true' ]];then
   echo "Depends: wine, wine-binfmt" >> "$build_dir/debian/control"
 fi
 
-debuild --no-tgz-check -i -I
+debuild_args=(--no-tgz-check -i -I)
+if [[ "$SIGN_DEB" != 'true' ]]; then
+  debuild_args+=(-us -uc)
+fi
+debuild "${debuild_args[@]}"
 mv $tmp_dir/*.deb $tmp_dir/build

@@ -1,6 +1,3 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
-
 name: Build Base Packages
 
 on:
@@ -14,75 +11,58 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [16.x]
+        node-version: [22.x]
         ARCH: ['x86_64']
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
 
       - name: Prepare
-        run: |
-          echo "$UID, $GID"
+        run: echo "$(id -u), $(id -g)"
 
-      - name: Generate TAG
-        id: Tag
-        run: |
-          tag='continuous'
-          name='Continuous Build'
-          if [ 'true' == ${{ startsWith(github.ref, 'refs/tags/') }} ];then
-            tag='${{ github.ref_name }}'
-            name='${{ github.ref_name }}'
-          fi
-          echo "tag result: $tag - $name"
-          echo "::set-output name=tag::$tag"
-          echo "::set-output name=name::$name"
-         
       - name: Build
+        env:
+          ACTION_MODE: 'true'
+          WINE: 'false'
         run: |
-          export ACTION_MODE=true
-          ls -l
-          export WINE=false
           tools/build-with-docker.sh
-  
+
       - name: Compress Resources
         run: |
-          ls -l
           mkdir -p tmp/src
-          rm -rf nwjs/node nwjs/node.exe
-          cp node/bin/node nwjs/node
-          cd nwjs && ln -s node node.exe
-          cd ..
-          tar -zcf tmp/src/src-linux.tar.gz bin nwjs package.nw tools
+          test -x electron/electron
+          test -f resources/app/package.json
+          rm -f electron/node electron/node.exe electron/node-18.exe
+          install -m 755 node/bin/node electron/node
+          ln -s node electron/node.exe
+          ln -s node electron/node-18.exe
+          tar -zcf tmp/src/src-linux.tar.gz bin electron resources tools
 
       - name: Compress nodegit
         run: |
-          ls -l
           mkdir -p tmp/build
-          cp -r package.nw/node_modules/nodegit .
-          tar -zcf nodegit.tar.gz nodegit
-          mv nodegit.tar.gz tmp/build
-          cd tmp/build
-          ls -l
-
-      - name: View Directory
-        run: |
-          ls -l
+          test -d resources/app/node_modules/nodegit
+          tar -zcf tmp/build/nodegit.tar.gz \
+            -C resources/app/node_modules nodegit
 
       - name: Upload src artifact
         uses: actions/upload-artifact@v4
         with:
-          # Artifact name
           name: wechat-devtools-${{ matrix.ARCH }}.src
           path: tmp/src
+          if-no-files-found: error
+          compression-level: 0
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          # Artifact name
           name: wechat-devtools-${{ matrix.ARCH }}.build
           path: tmp/build
+          if-no-files-found: error
+          compression-level: 0

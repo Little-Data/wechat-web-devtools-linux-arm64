@@ -44,8 +44,9 @@ else
 fi
 
 notice "检查版本号"
-DEVTOOLS_VERSION=$( cat "$root_dir/package.nw/package.json" | grep -m 1 -Eo "\"[0-9]{1}\.[0-9]{2}\.[0-9]+" )
-DEVTOOLS_VERSION="${DEVTOOLS_VERSION//\"/}"
+DEVTOOLS_VERSION=$("$root_dir/electron/node" -p \
+  "JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8')).version" \
+  "$root_dir/resources/app/package.json")
 INPUT_VERSION=$( echo $VERSION | sed 's/v//' | sed 's/-.*//' )
 if [[ "$INPUT_VERSION" != "$DEVTOOLS_VERSION" ]];then
   fail "传入版本号与实际版本号不一致！"
@@ -54,20 +55,26 @@ fi
 
 PACKAGE_NAME="WeChat_Dev_Tools_${VERSION}_${ARCH}_${TYPE}"
 build_dir="$tmp_dir/tar/$PACKAGE_NAME"
-mkdir -p $build_dir
+rm -rf "$build_dir"
+mkdir -p "$build_dir"
 notice "COPY bin"
 \cp -rf "$root_dir/bin" "$build_dir/bin"
-notice "COPY nwjs"
-\cp -drf "$root_dir/nwjs" "$build_dir/nwjs"
-notice "COPY node"
+notice "COPY electron"
+\cp -arf "$root_dir/electron" "$build_dir/electron"
+notice "COPY resources"
+\cp -arf "$root_dir/resources" "$build_dir/resources"
+notice "EMBED node"
 if [ -f "$root_dir/node/bin/node" ];then
-  cd $build_dir/nwjs && rm -rf node node.exe
-  \cp -rf "$root_dir/node/bin/node" "$build_dir/nwjs/node"
-  cd "$build_dir/nwjs" && ln -s node.exe node
+  rm -f "$build_dir/electron/node" "$build_dir/electron/node.exe" "$build_dir/electron/node-18.exe"
+  install -m 755 "$root_dir/node/bin/node" "$build_dir/electron/node"
+  ln -s node "$build_dir/electron/node.exe"
+  ln -s node "$build_dir/electron/node-18.exe"
 fi
-notice "COPY package.nw"
-\cp -rf "$root_dir/package.nw" "$build_dir/package.nw"
+if [ ! -x "$build_dir/electron/node" ]; then
+  fail "Electron运行时缺少Node可执行文件"
+  exit 1
+fi
 
 notice "MAKE tar.gz"
 cd "$tmp_dir/tar" && tar -zcf "$store_dir/$PACKAGE_NAME.tar.gz" "$PACKAGE_NAME"
-rm -rf $build_dir
+rm -rf "$build_dir"

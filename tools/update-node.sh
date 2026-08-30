@@ -45,11 +45,12 @@ tar xf $localPath -C $extractPath
 rm -rf "$root_dir/node"
 ls $extractPath | xargs -I {} mv $extractPath/{} "$root_dir/node"
 rm -rf $extractPath
-if [ -d "$root_dir/nwjs" ];then
-  cd "$root_dir/nwjs"
-  rm -rf node node.exe
+if [ -d "$root_dir/electron" ];then
+  cd "$root_dir/electron"
+  rm -f node node.exe node-18.exe
   ln -s ../node/bin/node node
   ln -s node node.exe
+  ln -s node node-18.exe
 fi
 
 echo "Succeeded upgrading node to version ${node_version}"

@@ -3,8 +3,8 @@
 # 打包成tar.gz & 构建AppImage
 
 # 参数：
-# $1 - 版本 v1.05.2203030-2
-# $2 - 平台 x86_64
+# $1 - 平台 x86_64
+# $2 - 版本 v2.02.2608060-1
 
 # 脚本执行前提，已完成支持wine的基本构建
 set -e
@@ -27,8 +27,9 @@ if [ -n "$1" ];then
   export ARCH=$1
 fi
 
-DEVTOOLS_VERSION=$( cat "$root_dir/package.nw/package.json" | grep -m 1 -Eo "\"[0-9]{1}\.[0-9]{2}\.[0-9]+" )
-DEVTOOLS_VERSION="${DEVTOOLS_VERSION//\"/}"
+DEVTOOLS_VERSION=$("$root_dir/electron/node" -p \
+  "JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8')).version" \
+  "$root_dir/resources/app/package.json")
 
 if [[ $VERSION == 'continuous' ]];then
   export VERSION="v${DEVTOOLS_VERSION}-continuous"

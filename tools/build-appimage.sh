@@ -42,8 +42,9 @@ build_dir="$tmp_dir/build"
 mkdir -p $build_dir
 
 notice "检查版本号"
-DEVTOOLS_VERSION=$( cat "$root_dir/package.nw/package.json" | grep -m 1 -Eo "\"[0-9]{1}\.[0-9]{2}\.[0-9]+" )
-DEVTOOLS_VERSION="${DEVTOOLS_VERSION//\"/}"
+DEVTOOLS_VERSION=$("$root_dir/electron/node" -p \
+  "JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8')).version" \
+  "$root_dir/resources/app/package.json")
 INPUT_VERSION=$( echo $VERSION | sed 's/v//' | sed 's/-.*//' )
 if [[ "$INPUT_VERSION" != "$DEVTOOLS_VERSION" ]];then
   fail "传入版本号与实际版本号不一致！"
@@ -61,7 +62,7 @@ fi
 chmod a+x "$tmp_dir/appimagetool-x86_64.AppImage"
 
 # Remove any previous build
-rm -rf $app_dir
+rm -rf "$app_dir"
 # Make usr and icons dirs
 mkdir -p $app_dir/bin
 mkdir -p $app_dir/usr/{src,bin}
@@ -76,25 +77,30 @@ cp $app_dir/usr/share/applications/*.desktop "$app_dir/io.github.msojocs.wechat_
 
 cat > "$app_dir/AppRun" <<- 'EOF'
 #!/bin/bash
-if [[ $1 == 'cli' ]];then
-    exec $APPDIR/bin/wechat-devtools-cli ${@:2}
+if [[ $1 == 'cli' ]]; then
+    exec "$APPDIR/bin/wechat-devtools-cli" "${@:2}"
 else
-    exec $APPDIR/bin/wechat-devtools
+    exec "$APPDIR/bin/wechat-devtools"
 fi
 EOF
 chmod +x "$app_dir/AppRun"
 
-cp -r "$root_dir/package.nw" "$app_dir/package.nw"
-cp -r "$root_dir/nwjs" "$app_dir/nwjs"
-if [ -f $root_dir/node/bin/node ];then
-  rm -rf "$app_dir/nwjs/node" "$app_dir/nwjs/node.exe"
-  cp "$root_dir/node/bin/node" "$app_dir/nwjs/node"
-  cd "$app_dir/nwjs/" && ln -s "node" "node.exe"
+cp -a "$root_dir/electron" "$app_dir/electron"
+cp -a "$root_dir/resources" "$app_dir/resources"
+if [ -f "$root_dir/node/bin/node" ];then
+  rm -f "$app_dir/electron/node" "$app_dir/electron/node.exe" "$app_dir/electron/node-18.exe"
+  install -m 755 "$root_dir/node/bin/node" "$app_dir/electron/node"
+  ln -s node "$app_dir/electron/node.exe"
+  ln -s node "$app_dir/electron/node-18.exe"
 fi
-cd "$app_dir"
+if [ ! -x "$app_dir/electron/node" ]; then
+  fail "Electron运行时缺少Node可执行文件"
+  exit 1
+fi
 
 # appimagetool $app_dir
 notice "MAKE APPIMAGE"
-"$tmp_dir/appimagetool-x86_64.AppImage" "$app_dir" "$build_dir/WeChat_Dev_Tools_${VERSION}_${ARCH}_${TYPE}.AppImage"
+APPIMAGE_EXTRACT_AND_RUN=1 "$tmp_dir/appimagetool-x86_64.AppImage" \
+  "$app_dir" "$build_dir/WeChat_Dev_Tools_${VERSION}_${ARCH}_${TYPE}.AppImage"
 
-rm -rf $app_dir
+rm -rf "$app_dir"

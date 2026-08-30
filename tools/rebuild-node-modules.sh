@@ -14,6 +14,30 @@ fail() {
   echo -e "\033[41;37m 失败 \033[0m $1"
 }
 
+has_https_proxy() {
+  [[ -v https_proxy && ${#https_proxy} -gt 0 ]]
+}
+
+with_openssl_proxy() {
+  if ! has_https_proxy; then
+    "$@"
+    return
+  fi
+
+  (
+    set +x
+    export GLOBAL_AGENT_HTTP_PROXY="$https_proxy"
+    export GLOBAL_AGENT_HTTPS_PROXY="$https_proxy"
+    if [[ -n "${no_proxy:-}" ]]; then
+      export GLOBAL_AGENT_NO_PROXY="$no_proxy"
+    fi
+    export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--require=$openssl_proxy_bootstrap"
+    unset http_proxy HTTP_PROXY https_proxy HTTPS_PROXY all_proxy ALL_PROXY
+    set -x
+    "$@"
+  )
+}
+
 # ─────────────────────────────────────────
 # 交叉编译判断与环境初始化
 # ─────────────────────────────────────────
@@ -88,8 +112,13 @@ electron_gyp_build() {
   local dir="$1"
   notice "Build $dir (node-gyp)"
   pushd "$dir"
-  HOME=~/.electron-gyp node-gyp configure "${configure_args[@]}" --target="36.6.0" --openssl_fips='' --dist-url=https://electronjs.org/headers
-  HOME=~/.electron-gyp node-gyp build
+  HOME=~/.electron-gyp node-gyp configure "${configure_args[@]}" --target="$electron_version" --openssl_fips='' --dist-url=https://electronjs.org/headers
+  if [[ "$dir" == "nodegit" ]] && has_https_proxy; then
+    notice "Use https_proxy for OpenSSL downloads"
+    with_openssl_proxy env HOME="$HOME/.electron-gyp" node-gyp build
+  else
+    HOME=~/.electron-gyp node-gyp build
+  fi
   popd
 }
 # 在临时叠加 loongarch64 C 兼容标志的子环境中执行任意命令
@@ -166,6 +195,7 @@ rm -fr vscode-windows-ca-certs \
 find -name "*.pdb" | xargs -I{} rm -rf {}
 find -name "*.lib" | xargs -I{} rm -rf {}
 find -name "*.dll" | xargs -I{} rm -rf {}
+find -name "*.exe" | xargs -I{} rm -rf {}
 
 # ── ripgrep 二进制替换 ────────────────────
 # https://github.com/microsoft/ripgrep-prebuilt
@@ -200,20 +230,34 @@ mkdir -p "${package_dir}/node_modules_tmp/node_modules"
 
 notice "install modules"
 export JOBS=$(nproc)
+module_packages=(
+  extract-file-icon
+  native-keymap
+  node-pty@1.0.0
+  native-watchdog
+  @vscode/spdlog@0.13.11
+  nodegit@0.28.0-alpha.36
+  @vscode/sqlite3
+)
+if has_https_proxy; then
+  module_packages+=(global-agent@3.0.0)
+fi
 (
   cd "${package_dir}/node_modules_tmp"
   npm install \
-    extract-file-icon \
-    native-keymap \
-    node-pty@1.0.0 \
-    native-watchdog \
-    @vscode/spdlog@0.13.11 \
-    nodegit@0.28.0-alpha.36 \
-    @vscode/sqlite3 \
+    "${module_packages[@]}" \
     --ignore-scripts \
     --registry=https://registry.npmmirror.com \
     --nodegit_binary_host_mirror=https://npmmirror.com/mirrors/nodegit/v0.28.0-alpha.36/
 )
+
+if has_https_proxy; then
+  openssl_proxy_bootstrap="${package_dir}/node_modules_tmp/node_modules/global-agent/bootstrap.js"
+  if [[ ! -f "$openssl_proxy_bootstrap" ]]; then
+    fail "OpenSSL代理模块安装失败"
+    exit 1
+  fi
+fi
 
 # ── 逐模块重编译 ──────────────────────────
 # 注：每个模块单独 rebuild，交叉编译时可能需要单独调整配置。
@@ -221,6 +265,7 @@ export JOBS=$(nproc)
 cd "${package_dir}/node_modules_tmp/node_modules"
 
 node_version=$(node "$root_dir/tools/parse-config.js" --get-node-version "$@")
+electron_version=$(node "$root_dir/tools/parse-config.js" --get-electron-version "$@")
 configure_args=(
   --target_platform=linux
   --target_arch="$arch"
@@ -231,7 +276,7 @@ configure_args=(
 electron_gyp_build "nodegit"
 node_gyp_build "extract-file-icon"
 node_gyp_build "native-keymap"
-electron_gyp_build "node-pty"       # node build
+electron_gyp_build "node-pty"
 node_gyp_build "native-watchdog"
 (cd "@vscode" && electron_gyp_build "spdlog")
 (cd "@vscode" && electron_gyp_build "sqlite3")
@@ -244,10 +289,10 @@ find . -name "*.a" | xargs -I{} rm -f {}
 find . -name "*.lib" -delete
 find . -name "*..mk" -delete
 
-# ── 将 .node 文件回写到 package.nw ───────
+# ── 将 .node 文件回写到 Electron 应用目录 ───────
 notice "copy node files"
 find . -name "*.node" | xargs -I{} cp -rf {} "${package_dir}/node_modules/{}"
 
 rm -rf "${package_dir}/node_modules_tmp"
 
-# $root_dir/tools/asar-helper.sh pack
+$root_dir/tools/asar-helper.sh pack

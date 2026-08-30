@@ -1,10 +1,6 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
-
 name: Build tar.gz AppImage
 
 on:
-  workflow_dispatch:
   workflow_call:
 
 jobs:
@@ -14,12 +10,10 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [16.x]
         ARCH: ['x86_64']
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Download artifacts
         uses: actions/download-artifact@v4
       - name: Inspect directory after downloading artifacts
@@ -27,29 +21,29 @@ jobs:
           ls -alFR wechat-devtools-*.build
           ls -alFR wechat-devtools-*.src
       - name: Prepare
-        run: |
-          sudo apt install -y fuse
-          echo "$UID, $GID"
+        run: echo "$(id -u), $(id -g)"
 
       - name: Generate TAG
-        id: Tag
+        id: tag
+        env:
+          IS_TAG: ${{ startsWith(github.ref, 'refs/tags/') }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           tag='continuous'
           name='Continuous Build'
-          if [ 'true' == ${{ startsWith(github.ref, 'refs/tags/') }} ];then
-            tag='${{ github.ref_name }}'
-            name='${{ github.ref_name }}'
+          if [[ "$IS_TAG" == 'true' ]]; then
+            tag="$REF_NAME"
+            name="$REF_NAME"
           fi
           echo "tag result: $tag - $name"
-          echo "::set-output name=tag::$tag"
-          echo "::set-output name=name::$name"
-         
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
       - name: Build
+        env:
+          ACTION_MODE: 'true'
+          WINE: 'false'
         run: |
-          export WINE=false
-          export ACTION_MODE=true
-          # tar.gz AppImage
-          ls -l
           mkdir -p tmp/build
           tools/build-prepare.sh
           tools/build-release.sh ${{ matrix.ARCH }} ${{ steps.tag.outputs.tag }}
@@ -61,6 +55,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          # Artifact name
           name: wechat-devtools-simple-${{ matrix.ARCH }}.build
           path: tmp/build
+          if-no-files-found: error
+          compression-level: 0

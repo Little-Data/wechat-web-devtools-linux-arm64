@@ -25,5 +25,7 @@ const parseFile = function (path) {
 let basedir = __dirname;
 if(undefined !== process.env['srcdir'])
     basedir = process.env['srcdir'] + '/tools';
-parseFile(path.resolve(basedir, "../package.nw/package.json"));
-parseFile(path.resolve(basedir, "../package.nw/package-lock.json"));
+for (const packageDir of ["app", "app.asar.unpacked"]) {
+    // parseFile(path.resolve(basedir, `../resources/${packageDir}/package.json`));
+    // parseFile(path.resolve(basedir, `../resources/${packageDir}/package-lock.json`));
+}
