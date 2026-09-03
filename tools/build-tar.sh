@@ -44,7 +44,9 @@ else
 fi
 
 notice "检查版本号"
-DEVTOOLS_VERSION=$("$root_dir/electron/node" -p \
+# 用宿主 node 读取版本：交叉编译时 electron/node 是目标架构（如 arm64），
+# 无法在 x86 宿主上直接运行（缺少目标架构动态加载器），而解析 JSON 无需运行目标 node。
+DEVTOOLS_VERSION=$(node -p \
   "JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8')).version" \
   "$root_dir/resources/app/package.json")
 INPUT_VERSION=$( echo $VERSION | sed 's/v//' | sed 's/-.*//' )
