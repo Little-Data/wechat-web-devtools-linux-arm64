@@ -79,6 +79,10 @@ setup_cross_compile() {
     cross_inc="-I${CROSS_SYSROOT}/usr/include -I${CROSS_SYSROOT}/usr/include/aarch64-linux-gnu"
     cross_ldflags="-L${CROSS_SYSROOT}/usr/lib/aarch64-linux-gnu"
     export PATH="${CROSS_SYSROOT}/usr/bin:$PATH"
+    # nodegit/utils/buildFlags.js 用 npm_config_arch 决定 targetArch；
+    # node-gyp build 不会把它写入子进程环境，导致 nodegit 误判为 x64，
+    # 从而把 vendored OpenSSL 按 linux-x86_64 配置（多出 -m64）。这里强制设为 arm64。
+    export npm_config_arch="arm64"
     "$root_dir/tools/cross/toolchain-prepare-arm64.sh"
   fi
 
