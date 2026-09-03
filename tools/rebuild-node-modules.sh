@@ -98,12 +98,27 @@ setup_cross_compile() {
 # 构建辅助函数
 # ─────────────────────────────────────────
 
+# 交叉编译时，x64 宿主的 node/electron headers common.gypi 里带有 '-m64'，
+# 会被写进 nodegit 顶层 Makefile 的 CFLAGS 并沿用（含 acquireOpenSSL 的 OpenSSL make），
+# 导致 aarch64-linux-gnu-gcc 报 "unrecognized command-line option '-m64'"。
+# 参考 loong64 的 toolchain-prepare-loong64.sh，对交叉编译清理掉 '-m64'。
+strip_m64_from_headers() {
+  local base="$1"
+  [ -n "$base" ] && [ -d "$base" ] || return 0
+  find "$base" -type f \( -name 'common.gypi' -o -name 'config.gypi' \) 2>/dev/null | while IFS= read -r f; do
+    sed -i "s#'-m64',##g; s#'-m64'##g" "$f" || true
+  done
+}
+
 # node-gyp configure + build（在子目录内运行）
 node_gyp_build() {
   local dir="$1"
   notice "Build $dir (node-gyp)"
   pushd "$dir"
   node-gyp configure "${configure_args[@]}" --target="v$node_version" --openssl_fips=''
+  if is_cross_compile; then
+    strip_m64_from_headers "$HOME/.cache/node-gyp"
+  fi
   node-gyp build
   popd
 }
@@ -113,6 +128,9 @@ electron_gyp_build() {
   notice "Build $dir (node-gyp)"
   pushd "$dir"
   HOME=~/.electron-gyp node-gyp configure "${configure_args[@]}" --target="$electron_version" --openssl_fips='' --dist-url=https://electronjs.org/headers
+  if is_cross_compile; then
+    strip_m64_from_headers "$HOME/.electron-gyp/.cache/node-gyp"
+  fi
   if [[ "$dir" == "nodegit" ]] && has_https_proxy; then
     notice "Use https_proxy for OpenSSL downloads"
     with_openssl_proxy env HOME="$HOME/.electron-gyp" node-gyp build
