@@ -325,16 +325,24 @@ swc_core_dir="${package_dir}/node_modules/@swc/core"
 if [ -f "$swc_core_dir/package.json" ] && { [ "$arch" = "arm64" ] || [ "$(uname -m)" = "aarch64" ]; }; then
   swc_ver=$(node -p "require('$swc_core_dir/package.json').version" 2>/dev/null || echo latest)
   echo "@swc/core version: $swc_ver"
-  (
-    cd "${package_dir}"
-    npm install --no-save --ignore-scripts \
-      --registry=https://registry.npmmirror.com \
-      "@swc/core-linux-arm64-gnu@${swc_ver}"
-  ) || echo "::warning::@swc/core-linux-arm64-gnu 安装失败（忽略）"
-  # 兼容 @swc/core 采用“同目录 .node”绑定方式（如 swc.linux-arm64-gnu.node）
-  find "${package_dir}/node_modules/@swc/core-linux-arm64-gnu" \
-       -name '*.node' -exec cp -f {} "$swc_core_dir/" \; 2>/dev/null || true
-  ls -l "$swc_core_dir" 2>/dev/null | grep -iE 'arm64|\.node' || true
+  # 安装到临时目录，再复制进应用：绝不能在 resources/app 里 npm install，
+  # 否则 --no-save 也会按 package.json 裁剪（prune）掉应用的其余依赖，破坏构建。
+  SWC_TMP="$root_dir/tmp/swc-install"
+  rm -rf "$SWC_TMP"; mkdir -p "$SWC_TMP"
+  SWC_TMP_OK=0
+  npm install --prefix "$SWC_TMP" --no-save --ignore-scripts \
+    --registry=https://registry.npmmirror.com \
+    "@swc/core-linux-arm64-gnu@${swc_ver}" \
+    && SWC_TMP_OK=1 || echo "::warning::@swc/core-linux-arm64-gnu 安装失败（忽略）"
+  if [ "$SWC_TMP_OK" = "1" ] && [ -d "$SWC_TMP/node_modules/@swc/core-linux-arm64-gnu" ]; then
+    # @swc/core 的 binding.js 依赖 require('@swc/core-linux-arm64-gnu') 解析，因此需该子包在应用目录内
+    cp -rf "$SWC_TMP/node_modules/@swc/core-linux-arm64-gnu" "${package_dir}/node_modules/@swc/" || \
+      echo "::warning::复制 @swc/core-linux-arm64-gnu 失败"
+    # 兼容 @swc/core 采用“同目录 .node”绑定方式（如 swc.linux-arm64-gnu.node）
+    find "$SWC_TMP/node_modules/@swc/core-linux-arm64-gnu" \
+         -name '*.node' -exec cp -f {} "$swc_core_dir/" \; 2>/dev/null || true
+    ls -l "$swc_core_dir" 2>/dev/null | grep -iE 'arm64|\.node' || true
+  fi
 else
   echo "::warning::未找到 @swc/core，跳过 arm64 绑定安装"
 fi
