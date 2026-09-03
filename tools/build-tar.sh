@@ -46,9 +46,15 @@ fi
 notice "检查版本号"
 # 用宿主 node 读取版本：交叉编译时 electron/node 是目标架构（如 arm64），
 # 无法在 x86 宿主上直接运行（缺少目标架构动态加载器），而解析 JSON 无需运行目标 node。
-DEVTOOLS_VERSION=$(node -p \
-  "JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8')).version" \
-  "$root_dir/resources/app/package.json")
+# 另外构建结束时 resources/app 已被打成 app.asar（app/ 目录不存在），此时回退到
+# conf/config.json 的 devtools.version（与下载安装的版本一致）。
+if [ -f "$root_dir/resources/app/package.json" ]; then
+  DEVTOOLS_VERSION=$(node -p \
+    "JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8')).version" \
+    "$root_dir/resources/app/package.json")
+else
+  DEVTOOLS_VERSION=$(node "$root_dir/tools/parse-config.js" --get-devtools-version)
+fi
 INPUT_VERSION=$( echo $VERSION | sed 's/v//' | sed 's/-.*//' )
 if [[ "$INPUT_VERSION" != "$DEVTOOLS_VERSION" ]];then
   fail "传入版本号与实际版本号不一致！"
