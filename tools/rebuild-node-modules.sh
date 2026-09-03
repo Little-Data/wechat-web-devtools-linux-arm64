@@ -317,4 +317,26 @@ find . -name "*.node" | xargs -I{} cp -rf {} "${package_dir}/node_modules/{}"
 
 rm -rf "${package_dir}/node_modules_tmp"
 
+# ── 补齐 @swc/core 的 arm64 平台原生绑定（best-effort）──
+# Windows/官方资源里只带 win32 与 linux-x64 绑定；arm64 缺失时运行期会报
+# "@swc/core Failed to load native binding"，进而导致 app.js 无法加载、页面未注册。
+notice "install @swc/core arm64 binding (best-effort)"
+swc_core_dir="${package_dir}/node_modules/@swc/core"
+if [ -f "$swc_core_dir/package.json" ] && { [ "$arch" = "arm64" ] || [ "$(uname -m)" = "aarch64" ]; }; then
+  swc_ver=$(node -p "require('$swc_core_dir/package.json').version" 2>/dev/null || echo latest)
+  echo "@swc/core version: $swc_ver"
+  (
+    cd "${package_dir}"
+    npm install --no-save --ignore-scripts \
+      --registry=https://registry.npmmirror.com \
+      "@swc/core-linux-arm64-gnu@${swc_ver}"
+  ) || echo "::warning::@swc/core-linux-arm64-gnu 安装失败（忽略）"
+  # 兼容 @swc/core 采用“同目录 .node”绑定方式（如 swc.linux-arm64-gnu.node）
+  find "${package_dir}/node_modules/@swc/core-linux-arm64-gnu" \
+       -name '*.node' -exec cp -f {} "$swc_core_dir/" \; 2>/dev/null || true
+  ls -l "$swc_core_dir" 2>/dev/null | grep -iE 'arm64|\.node' || true
+else
+  echo "::warning::未找到 @swc/core，跳过 arm64 绑定安装"
+fi
+
 $root_dir/tools/asar-helper.sh pack
