@@ -4,6 +4,10 @@
             "x64": {
                 "version": "36.6.0",
                 "template": "https://github.com/electron/electron/releases/download/v${version}/electron-v${version}-linux-x64.zip"
+            },
+            "arm64": {
+                "version": "36.6.0",
+                "template": "https://github.com/electron/electron/releases/download/v${version}/electron-v${version}-linux-arm64.zip"
             }
         }
     },
