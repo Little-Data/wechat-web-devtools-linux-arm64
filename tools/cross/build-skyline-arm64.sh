@@ -23,14 +23,23 @@ notice "unpack resources/app"
 "$root_dir/tools/asar-helper.sh" unpack || fail "asar unpack"
 
 # ── vcpkg + spdlog（CMake 依赖 find_package(spdlog REQUIRED)）──
+# 按宿主架构设定 vcpkg triplet：arm64 宿主必须用 arm64-linux，否则 vcpkg 会去检测/构建 x64-linux 而失败。
+host_arch=$(uname -m)
+case "$host_arch" in
+  aarch64|arm64) SKYLINE_TRIPLET="arm64-linux" ;;
+  *)             SKYLINE_TRIPLET="x64-linux" ;;
+esac
+notice "vcpkg triplet: $SKYLINE_TRIPLET"
 export VCPKG_ROOT="$cache_dir/vcpkg"
+export VCPKG_TARGET_TRIPLET="$SKYLINE_TRIPLET"
+export VCPKG_HOST_TRIPLET="$SKYLINE_TRIPLET"
 if [ ! -x "$VCPKG_ROOT/vcpkg" ]; then
   notice "bootstrap vcpkg"
   git clone --depth 1 https://github.com/microsoft/vcpkg.git "$VCPKG_ROOT" \
     || fail "clone vcpkg"
   "$VCPKG_ROOT/bootstrap-vcpkg.sh" -disableMetrics || fail "bootstrap vcpkg"
 fi
-notice "vcpkg install spdlog (arm64-linux)"
+notice "vcpkg install spdlog ($SKYLINE_TRIPLET)"
 "$VCPKG_ROOT/vcpkg" install spdlog || fail "vcpkg install spdlog"
 
 # ── 构建一个 NAPI 插件 ──────────────────────────────
@@ -44,6 +53,16 @@ build_addon() {
   fi
   local build_base="$d"
   [ -n "$sub" ] && build_base="$d/$sub"
+  # 上游 CMakeLists 写死了 x64-linux triplet（且 FORCE），在 arm64 上会造成 vcpkg 编译检测失败；
+  # sed 掉成宿主 triplet。注：VCPKG_TARGET_TRIPLET 用的是 ${_skyline_default_triplet}。
+  local cmk="$build_base/CMakeLists.txt"
+  if [ -f "$cmk" ]; then
+    sed -i \
+      -e "s#set(_skyline_default_triplet .*-linux)#set(_skyline_default_triplet ${SKYLINE_TRIPLET})#" \
+      -e "s#set(VCPKG_HOST_TRIPLET .*-linux)#set(VCPKG_HOST_TRIPLET ${SKYLINE_TRIPLET})#" \
+      "$cmk" 2>/dev/null || true
+    notice "patched triplet in $cmk"
+  fi
   (
     cd "$build_base"
     corepack enable 2>/dev/null || npm install -g pnpm@9 || true
