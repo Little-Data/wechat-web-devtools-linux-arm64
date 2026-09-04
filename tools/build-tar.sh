@@ -83,6 +83,15 @@ if [ ! -x "$build_dir/electron/node" ]; then
   exit 1
 fi
 
+# 确保编译器与关键原生模块的可执行位存在（asar 打包/复制可能丢失，
+# 丢失会导致预览走 wcc-exec 时报"权限不够"（exit 126））。
+notice "确保文件权限正常（可执行）"
+chmod +x "$build_dir/resources/app.asar.unpacked/node_modules/wcc-exec/wcc" \
+         "$build_dir/resources/app.asar.unpacked/node_modules/wcc-exec/wcsc" \
+         "$build_dir/resources/app.asar.unpacked/node_modules/wcc-electron/build/Release/wcc.node" \
+         "$build_dir/resources/app.asar.unpacked/node_modules/wcc-electron/build/Release/wcsc.node" \
+         2>/dev/null || true
+
 notice "MAKE tar.gz"
 cd "$tmp_dir/tar" && tar -zcf "$store_dir/$PACKAGE_NAME.tar.gz" "$PACKAGE_NAME"
 rm -rf "$build_dir"
