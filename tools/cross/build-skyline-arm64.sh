@@ -73,7 +73,8 @@ build_addon() {
   )
   mkdir -p "$out_dir"
   local n
-  n=$(find "$build_base/build/Release" -name '*.node' 2>/dev/null | head -1)
+  # 产物可能落在 build/ 或 build/Release（具体取决于模块的 CMAKE_LIBRARY_OUTPUT_DIRECTORY），递归查找
+  n=$(find "$build_base/build" -name '*.node' 2>/dev/null | head -1)
   [ -n "$n" ] || fail "$repo 未产出 .node"
   cp "$n" "$out_dir/$out_name"
   chmod +x "$out_dir/$out_name"
