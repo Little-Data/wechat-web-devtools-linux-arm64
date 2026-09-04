@@ -316,6 +316,9 @@ notice "copy node files"
 find . -name "*.node" | xargs -I{} cp -rf {} "${package_dir}/node_modules/{}"
 
 rm -rf "${package_dir}/node_modules_tmp"
+# 上面 rm 会删除 shell 当前所在目录（node_modules_tmp/node_modules），必须切回有效目录，
+# 否则后续 spawn（npm install / asar-helper）会报 "ENOENT ... uv_cwd / getcwd"。
+cd "$root_dir" || true
 
 # ── 补齐 @swc/core 的 arm64 平台原生绑定（best-effort）──
 # Windows/官方资源里只带 win32 与 linux-x64 绑定；arm64 缺失时运行期会报
