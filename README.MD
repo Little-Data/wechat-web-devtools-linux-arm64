@@ -85,6 +85,15 @@ docker run -d \
 
 # 界面截图
 
+**以下图片可能很久不更新**
+
+![01](res/screenshots/areashot-2026-09-11_00_08_22.png)
+
+![02](res/screenshots/areashot-2026-09-11_00_11_14.png)
+
+![03](res/screenshots/areashot-2026-09-11_00_12_51.png)
+
+![04](res/screenshots/areashot-2026-09-11_00_19_55.png)
 
 # 免责声明
 
