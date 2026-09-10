@@ -1,3 +1,10 @@
+# 2.02.2608070-1 / 2026-09-10
+- update: devtools to v2.02.2608070
+- fix: 基础库3.x懒加载架构下 WAAutoService.js/WAAutoWebview.js 为空文件导致的 net::ERR_EMPTY_RESPONSE
+
+# 2.02.2608060-1 / 2026-09-
+- 从此处开始适配 arm64 架构
+
 # 2.02.2608060-1 / 2026-08-
 - update: devtools to v2.02.2608060
 

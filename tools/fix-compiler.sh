@@ -46,6 +46,10 @@ apply_prepend_patch() {
 apply_prepend_patch "$package_dir/js/electron/backend/bootstrap.js" "$root_dir/res/scripts/bootstrap.js"
 apply_prepend_patch "$package_dir/js/common/miniprogram-builder/modules/corecompiler/original/workerThread/config.js" "$root_dir/res/scripts/config.js"
 
+# 修复基础库 3.x 懒加载架构下 WAAutoService.js / WAAutoWebview.js 为空文件导致的
+# net::ERR_EMPTY_RESPONSE（详见 tools/fix-vendor.js 注释）
+node "$root_dir/tools/fix-vendor.js" "$package_dir"
+
 echo "replace: wcc,wcsc linux version"
 compiler_version=$(node "$root_dir/tools/parse-config.js" --get-compiler-version $@)
 arch=$(node "$root_dir/tools/parse-config.js" --get-arch $@)
