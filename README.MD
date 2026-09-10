@@ -52,7 +52,7 @@
 
 # 使用方法
 
-1. 可以在本项目的[Release](https://github.com/msojocs/wechat-web-devtools-linux/releases)中，寻找已经构筑好了的软件包，下载使用。
+1. 可以在本项目的[Release](https://github.com/Little-Data/wechat-web-devtools-linux/releases)中，寻找已经构筑好了的软件包，下载使用。
 2. 到[构建仓库](https://github.com/Little-Data/wx-compiler-arm64/actions)中下载构建好的附件
 
 # 自行构建
