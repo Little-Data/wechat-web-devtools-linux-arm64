@@ -25,9 +25,9 @@ if [ ! -f "${srcdir}/cache/${float_pigment_file}" ];then
   wget -c "https://github.com/msojocs/float-pigment-rust/releases/download/${float_pigment_version}/float-pigment.${float_pigment_target}.node" -O "${srcdir}/cache/${float_pigment_file}.tmp"
   mv "${srcdir}/cache/${float_pigment_file}.tmp" "${srcdir}/cache/${float_pigment_file}"
 fi
+# Electron 下插件只加载 -nodejs 绑定（-nwjs 绑定仅在 process.__nwjs 为真时使用）
 rm -f "${package_dir}/node_modules/node-float-pigment-css/float-pigment-css-for-nodejs.node" "${package_dir}/node_modules/node-float-pigment-css/float-pigment-css-for-nwjs.node"
 cp "${srcdir}/cache/${float_pigment_file}" "${package_dir}/node_modules/node-float-pigment-css/float-pigment-css-for-nodejs.node"
-cp "${srcdir}/cache/${float_pigment_file}" "${package_dir}/node_modules/node-float-pigment-css/float-pigment-css-for-nwjs.node"
 
 # websocket找不到
 # cd "${package_dir}/js/libs/vseditor/extensions/node_modules/ws/lib"

@@ -1,10 +1,13 @@
-# 2.02.2608070-1 / 2026-09-10
+# 2.02.2608070-1 / 2026-09-12
 - update: devtools to v2.02.2608070
 - fix: 基础库3.x懒加载架构下 WAAutoService.js/WAAutoWebview.js 为空文件导致的 net::ERR_EMPTY_RESPONSE
 - update: node v22.16.0 (arm64/loongarch64，对齐 Electron 36.6.0)
 - fix: Electron 下 document_start / skyline 注入脚本报错导致 window.__global 未初始化（navigator / __contextSupport / getActiveAppWindow 报错）
 - chore: 启动脚本设置 `ELECTRON_DISABLE_SECURITY_WARNINGS=true` 关闭 Electron 安全告警
-- chore: 清理 nw.js 遗留代码
+- chore: 移除 document_start.js 的 nw.js 补丁（process.versions.nw Proxy、code/package.nw 路径）
+- chore: float-pigment 不再复制 -nwjs 绑定，仅保留 -nodejs
+- chore: 移除 NW_VERSION、nw-headers 等 nw.js 遗留配置
+- chore: 精简构建配置，仅支持 arm64
 
 # 2.02.2608060-1 / 2026-09-
 - 从此处开始适配 arm64 架构

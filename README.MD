@@ -78,6 +78,8 @@
 
 ## Skyline(实验性功能)
 
+没有用过 Skyline ，项目一旦有 Skyline 必报错。目前版本没有带 Server 所以报错，但不保证有了 Server 就会正常
+
 启动Server后，过一段时间，点击编译即可。
 
 > [!Warning]

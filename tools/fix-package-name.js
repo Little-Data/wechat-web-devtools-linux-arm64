@@ -11,13 +11,6 @@ const parseFile = function (path) {
     let content = JSON.parse(fs.readFileSync(path, "utf8"));
 
     content.name = content.productName = "wechat-devtools";
-    // 开启调试，更新参数
-    // content['chromium-args'] = content['chromium-args']
-    //                             .replace('--disable-devtools', '--mixed-context')
-    //                             .replace('--ignore-gpu-blacklist', '--ignore-gpu-blocklist')
-    //                             // fix worker, issue #145
-    //                             .replace('--js-flags=--harmony-weak-refs', '--enable-features=SharedArrayBuffer')
-    // content.window.height = content.window.width = 1000
     fs.writeFileSync(path, JSON.stringify(content));
 
 };
