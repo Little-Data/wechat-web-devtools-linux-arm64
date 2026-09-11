@@ -13,9 +13,9 @@ jobs:
         ARCH: ['x86_64']
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
 
       - name: Generate TAG
         id: tag
@@ -60,7 +60,7 @@ jobs:
           tools/build-deepin.sh "${{ steps.tag.outputs.tag }}"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wechat-devtools-deb-${{ matrix.ARCH }}.build
           path: tmp/build

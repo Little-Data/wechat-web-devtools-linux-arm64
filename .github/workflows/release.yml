@@ -41,7 +41,7 @@ jobs:
       contents: write
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
       - name: Inspect directory after downloading artifacts
         run: ls -alFR
 
@@ -72,7 +72,7 @@ jobs:
           ./pyuploadtool-x86_64.AppImage **build/WeChat*.AppImage **build/*.tar.gz **build/*.deb
 
       - name: Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         if: startsWith(github.ref, 'refs/tags/')
         with:
           # note you'll typically need to create a personal access token
