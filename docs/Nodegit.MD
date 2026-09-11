@@ -1,4 +1,4 @@
-NodeJS v16.x下安装nodegit
+NodeJS v22.x下安装nodegit
 1. `apt-get install -y python2 python3 libkrb5-dev gcc openssl libssh2-1-dev g++ make pkg-config`
 2. `npm install nodegit`
 
@@ -9,7 +9,7 @@ python >= 3.6
 version: "3"
 services:
   wechat_devtools:
-    image: node:16.13.1-slim
+    image: node:22-slim
     volumes:
       - .:/workspace
     entrypoint: /workspace/docker/entrypoint
