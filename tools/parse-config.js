@@ -24,12 +24,6 @@ const options = {
     '--get-node-version': {
         type: 'boolean',
     },
-    '--get-compiler-prefix': {
-        type: 'boolean',
-    },
-    '--get-compiler-version': {
-        type: 'boolean',
-    },
     '--get-devtools-url': {
         type: 'boolean',
     },
@@ -46,7 +40,7 @@ for (let i = 0; i < args.length; i++) {
             i++;
             if (i < args.length) {
                 if (args[i - 1] === '--arch') {
-                    if (args[i] === 'x64' || args[i] === 'loongarch64' || args[i] === 'arm64') {
+                    if (args[i] === 'arm64') {
                         configArg.arch = args[i];
                     } else {
                         console.error(`Invalid value for option --arch: ${args[i]}`);
@@ -85,16 +79,6 @@ if (configArg['get-node-url']) {
 
 if (configArg['get-node-version']) {
     console.log(config.node.urls[configArg.arch].version);
-    exit(0);
-}
-
-if (configArg['get-compiler-prefix']) {
-    console.log(config.compiler.template.replace(/\${version}/g, config.compiler.version));
-    exit(0);
-}
-
-if (configArg['get-compiler-version']) {
-    console.log(config.compiler.version);
     exit(0);
 }
 

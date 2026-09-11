@@ -89,7 +89,7 @@ build_addon "msojocs/skyline-shared-memory" "master" "" \
 build_addon "msojocs/skyline-client-server" "master" "packages/native" \
   "$package_dir/node_modules/skyline-addon/build" "skyline.node"
 
-# ── JS 补丁（对齐 replace-skyline.sh，但使用 Electron 布局）──
+# ── JS 补丁（Electron 布局）──
 notice "patch skyline extensions"
 inject() {  # $1 target  $2 patch
   local t="$package_dir/$1" p="$root_dir/$2"
@@ -106,5 +106,5 @@ inject "js/extensions/skyline/index.js" "res/scripts/skyline.js"
 notice "pack resources/app"
 "$root_dir/tools/asar-helper.sh" pack || fail "asar pack"
 
-notice "Skyline arm64 插件构建完成（如 skyline 仍需运行 skyline-server 镜像，见 tools/run-skyline-server.sh）"
+notice "Skyline arm64 插件构建完成（如 skyline 仍需运行 skyline-server 镜像）"
 exit 0

@@ -38,81 +38,12 @@ with_openssl_proxy() {
   )
 }
 
-# ─────────────────────────────────────────
-# 交叉编译判断与环境初始化
-# ─────────────────────────────────────────
-
-# 判断是否为 x86_64 → loongarch64 交叉编译
-is_loong64_cross() {
-  [ "$arch" == "loongarch64" ] && [ "$(uname -m)" == "x86_64" ]
-}
-
-# 判断是否为 x86_64 → arm64 交叉编译
-is_arm64_cross() {
-  [ "$arch" == "arm64" ] && [ "$(uname -m)" == "x86_64" ]
-}
-
-# 判断是否处于任意交叉编译模式（在 setup_cross_compile 之后调用才有效）
-is_cross_compile() {
-  [ -n "${GNU_TRIPLET:-}" ]
-}
-
-# 初始化交叉编译工具链环境变量
-# 成功后会设置全局变量：GNU_TRIPLET, CROSS_SYSROOT
-setup_cross_compile() {
-  GNU_TRIPLET=""
-  CROSS_SYSROOT=""
-  local cross_inc cross_ldflags
-
-  if is_loong64_cross; then
-    notice "在x86构建龙架构，准备交叉编译"
-    GNU_TRIPLET="loongarch64-unknown-linux-gnu"
-    CROSS_SYSROOT="$root_dir/cache/cross-tools/target"
-    cross_inc="-I${CROSS_SYSROOT}/usr/include -I${CROSS_SYSROOT}/usr/include/loongarch64-linux-gnu"
-    cross_ldflags="-L${CROSS_SYSROOT}/usr/lib64 -L${CROSS_SYSROOT}/usr/lib/loongarch64-linux-gnu"
-    export PATH="${CROSS_SYSROOT}/usr/bin:$root_dir/cache/cross-tools/${GNU_TRIPLET}/bin:$root_dir/cache/cross-tools/bin:$PATH"
-    "$root_dir/tools/cross/toolchain-prepare-loong64.sh"
-  elif is_arm64_cross; then
-    notice "在x86构建arm64，准备交叉编译"
-    GNU_TRIPLET="aarch64-linux-gnu"
-    CROSS_SYSROOT="$root_dir/cache/cross-tools-arm64/target"
-    cross_inc="-I${CROSS_SYSROOT}/usr/include -I${CROSS_SYSROOT}/usr/include/aarch64-linux-gnu"
-    cross_ldflags="-L${CROSS_SYSROOT}/usr/lib/aarch64-linux-gnu"
-    export PATH="${CROSS_SYSROOT}/usr/bin:$PATH"
-    # nodegit/utils/buildFlags.js 用 npm_config_arch 决定 targetArch；
-    # node-gyp build 不会把它写入子进程环境，导致 nodegit 误判为 x64，
-    # 从而把 vendored OpenSSL 按 linux-x86_64 配置（多出 -m64）。这里强制设为 arm64。
-    export npm_config_arch="arm64"
-    "$root_dir/tools/cross/toolchain-prepare-arm64.sh"
-  fi
-
-  if is_cross_compile; then
-    export CC="${GNU_TRIPLET}-gcc"
-    export CXX="${GNU_TRIPLET}-g++"
-    export AR="${GNU_TRIPLET}-ar"
-    export LINK="${GNU_TRIPLET}-g++"
-    export RANLIB="${GNU_TRIPLET}-ranlib"
-    export CFLAGS="$cross_inc"
-    export CXXFLAGS="$cross_inc"
-    export LDFLAGS="$cross_ldflags"
-  fi
-}
+# 说明：本仓库仅在原生 arm64 宿主上构建，不再支持 x86 交叉编译
+# （原 x86 → arm64 / loongarch64 的交叉工具链脚本已移除）。
 
 # ─────────────────────────────────────────
 # 构建辅助函数
 # ─────────────────────────────────────────
-
-# 交叉编译时，x64 宿主的 node/electron headers common.gypi 里带有 '-m64'，
-# 会被写进 nodegit 顶层 Makefile 的 CFLAGS 并沿用（含 acquireOpenSSL 的 OpenSSL make），
-# 导致 aarch64-linux-gnu-gcc 报 "unrecognized command-line option '-m64'"。
-# 参考 loong64 的 toolchain-prepare-loong64.sh，对交叉编译清理掉 '-m64'。
-strip_m64_from_headers() {
-  local base="$1"
-  [ -n "$base" ] && [ -d "$base" ] || return 0
-  find "$base" -type f \( -name 'common.gypi' -o -name 'config.gypi' \) 2>/dev/null | while IFS= read -r f; do
-    sed -i "s#'-m64',##g; s#'-m64'##g" "$f" || true
-  done
-}
 
 # node-gyp configure + build（在子目录内运行）
 node_gyp_build() {
@@ -120,9 +51,6 @@ node_gyp_build() {
   notice "Build $dir (node-gyp)"
   pushd "$dir"
   node-gyp configure "${configure_args[@]}" --target="v$node_version" --openssl_fips=''
-  if is_cross_compile; then
-    strip_m64_from_headers "$HOME/.cache/node-gyp"
-  fi
   node-gyp build
   popd
 }
@@ -132,45 +60,12 @@ electron_gyp_build() {
   notice "Build $dir (node-gyp)"
   pushd "$dir"
   HOME=~/.electron-gyp node-gyp configure "${configure_args[@]}" --target="$electron_version" --openssl_fips='' --dist-url=https://electronjs.org/headers
-  if is_cross_compile; then
-    strip_m64_from_headers "$HOME/.electron-gyp/.cache/node-gyp"
-  fi
   if [[ "$dir" == "nodegit" ]] && has_https_proxy; then
     notice "Use https_proxy for OpenSSL downloads"
     with_openssl_proxy env HOME="$HOME/.electron-gyp" node-gyp build
   else
     HOME=~/.electron-gyp node-gyp build
   fi
-  popd
-}
-# 在临时叠加 loongarch64 C 兼容标志的子环境中执行任意命令
-# 用法：with_loong64_cflags <cmd> [args...]
-with_loong64_cflags() {
-  (
-    if is_loong64_cross; then
-      export CFLAGS="$CFLAGS -x c -std=gnu89 -Wno-error=incompatible-pointer-types -Wno-incompatible-pointer-types"
-      export CXXFLAGS="$CXXFLAGS -Wno-error=incompatible-pointer-types -Wno-incompatible-pointer-types"
-    fi
-    "$@"
-  )
-}
-
-# ─────────────────────────────────────────
-# 模块特定构建函数
-# ─────────────────────────────────────────
-
-build_nodegit() {
-  notice "Build nodegit"
-  pushd nodegit
-  # https://github.com/nodejs/node-gyp/issues/2673#issuecomment-1196931379
-  node-gyp configure "${configure_args[@]}" --target="v$node_version" --openssl_fips=''
-  # 交叉编译时需要为 libssh2 的 configure 脚本传入 --host，否则 libssh2 会误判为宿主机架构
-  if is_cross_compile; then
-    sed -i "s#libssh2ConfigureScript,#\`\${libssh2ConfigureScript} --host=${GNU_TRIPLET}\`,#" \
-      utils/configureLibssh2.js
-  fi
-  node-gyp build
-  rm -rf .github include src lifecycleScripts vendor utils build/vendor build/Release/.deps
   popd
 }
 
@@ -199,7 +94,6 @@ if [ "$PY_VERSION" != "2" ]; then
 fi
 
 arch=$(node "$root_dir/tools/parse-config.js" --get-arch "$@")
-setup_cross_compile
 
 echo -e "\033[42;37m ######## 版本信息 $(date '+%Y-%m-%d %H:%M:%S') ########\033[0m"
 echo "arch:             $arch"
@@ -282,7 +176,6 @@ if has_https_proxy; then
 fi
 
 # ── 逐模块重编译 ──────────────────────────
-# 注：每个模块单独 rebuild，交叉编译时可能需要单独调整配置。
 
 cd "${package_dir}/node_modules_tmp/node_modules"
 

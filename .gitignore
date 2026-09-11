@@ -1,23 +1,13 @@
-arch/
-nwjs/
 node/
-package.nw
 cache/
 tmp/
 mew/
 node_modules
-test/mini-ci
 crash-server
 build
-*.snap
-*.AppImage
-appimage-builder-cache
 wcc.bin
 wcsc.bin
 temp.sh
-# flatpak
-.flatpak-builder
-build-dir
 __pycache__
 .wine
 electron

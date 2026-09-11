@@ -28,6 +28,8 @@ export WECHAT_DEVTOOLS_DIR="$root_dir/electron"
 export APPDATA="$DATA_DIR/$APP_NAME"
 export USERPROFILE="$APPDATA"
 export PATH="$root_dir/electron:$PATH"
+# 关闭 Electron 输出的安全告警（nodeIntegration/webSecurity/CSP 等）
+export ELECTRON_DISABLE_SECURITY_WARNINGS=true
 mkdir -p "$APPDATA/Default"
 
 "$root_dir/electron/node" "$package_dir/js/common/cli/index.js" "$@"

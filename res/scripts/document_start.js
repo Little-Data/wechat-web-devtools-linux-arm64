@@ -1,5 +1,7 @@
 (() => {
-    const nwVersion = globalThis?.process?.versions.nw.split('.').map(Number)
+    // Electron 下没有 process.versions.nw，需可选链兜底；否则此处抛异常会中断
+    // 后面被注入（追加）到同一文件的 documentstart 包，导致 window.__global 未初始化。
+    const nwVersion = globalThis?.process?.versions?.nw?.split('.').map(Number)
     if (nwVersion && nwVersion[1] >= 101){
         // 处理此报错 -> Uncaught TypeError: 'getOwnPropertyDescriptor' on proxy: trap reported non-configurability for property 'arguments' which is either non-existent or configurable in the proxy target
         // Wrap global Proxy to sanitize handlers and avoid proxy invariant errors

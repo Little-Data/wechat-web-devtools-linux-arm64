@@ -39,19 +39,6 @@ cp "${srcdir}/cache/${float_pigment_file}" "${package_dir}/node_modules/node-flo
 #   mv "Validation.js" "validation.js"
 # fi
 
-# 阻止无限启动服务器
-# mv "${package_dir}/js/core/entrance.js" "${package_dir}/js/core/entrance.js.bak"
-# cat "${srcdir}/res/scripts/entrance.js" > "${package_dir}/js/core/entrance.js"
-# cat "${package_dir}/js/core/entrance.js.bak" >> "${package_dir}/js/core/entrance.js"
-# rm "${package_dir}/js/core/entrance.js.bak"
-
-# 修复iframe导致的崩溃
-# sed -i 's#"use strict";##' "${package_dir}/js/core/index.js"
-# mv "${package_dir}/js/core/index.js" "${package_dir}/js/core/index.js.bak"
-# cat "${srcdir}/res/scripts/core_index.js" > "${package_dir}/js/core/index.js"
-# cat "${package_dir}/js/core/index.js.bak" >> "${package_dir}/js/core/index.js"
-# rm "${package_dir}/js/core/index.js.bak"
-
 # 修复编辑器不能覆盖粘贴
 # sed -i 's#if(super(),l.isLinux){let#if(super(),l.isLinux){return;let#' "${package_dir}/js/libs/vseditor/bundled/editor.bundled.js"
 

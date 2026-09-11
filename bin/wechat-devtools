@@ -24,6 +24,8 @@ export WECHAT_DEVTOOLS_DIR="$root_dir/electron"
 export APPDATA="$DATA_DIR/$APP_NAME/app"
 export PATH="$root_dir/node/bin:$root_dir/electron:$PATH"
 export USERPROFILE=$APPDATA
+# 关闭 Electron 输出的安全告警（nodeIntegration/webSecurity/CSP 等）
+export ELECTRON_DISABLE_SECURITY_WARNINGS=true
 
 clean_cache() {
   echo "清理缓存";

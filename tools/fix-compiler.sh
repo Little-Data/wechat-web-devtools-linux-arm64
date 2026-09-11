@@ -51,46 +51,28 @@ apply_prepend_patch "$package_dir/js/common/miniprogram-builder/modules/corecomp
 node "$root_dir/tools/fix-vendor.js" "$package_dir"
 
 echo "replace: wcc,wcsc linux version"
-compiler_version=$(node "$root_dir/tools/parse-config.js" --get-compiler-version $@)
 arch=$(node "$root_dir/tools/parse-config.js" --get-arch $@)
-if [ "$arch" == "x64" ];then
-  arch="x86_64"
-elif [ "$arch" == "loongarch64" ];then
-  arch="loong64"
-fi
 
-mkdir -p "${srcdir}/cache/compiler/v${compiler_version}"
-if [ ! -f "${srcdir}/cache/compiler/v${compiler_version}/wcc-${arch}" ];then
-  wget -c "https://github.com/msojocs/wx-compiler/releases/download/v${compiler_version}/wcc-${arch}" -O "${srcdir}/cache/compiler/v${compiler_version}/wcc-${arch}.tmp"
-  mv "${srcdir}/cache/compiler/v${compiler_version}/wcc-${arch}.tmp" "${srcdir}/cache/compiler/v${compiler_version}/wcc-${arch}"
-  chmod +x "${srcdir}/cache/compiler/v${compiler_version}/wcc-${arch}"
-fi
+# 编译器产物由 wx-compiler-arm64 构建流程编译后注入 cache/compiler，
+# 本脚本只负责替换进应用（不再从上游下载）。
+compiler_cache="${srcdir}/cache/compiler"
+for f in "wcc-${arch}" "wcsc-${arch}" "wcc-${arch}.node" "wcsc-${arch}.node"; do
+  if [ ! -f "${compiler_cache}/${f}" ]; then
+    echo -e "\e[1;31m缺少编译器产物: ${compiler_cache}/${f}\e[0m" >&2
+    $root_dir/tools/asar-helper.sh pack
+    exit 1
+  fi
+done
 
-if [ ! -f "${srcdir}/cache/compiler/v${compiler_version}/wcsc-${arch}" ];then
-  wget -c "https://github.com/msojocs/wx-compiler/releases/download/v${compiler_version}/wcsc-${arch}" -O "${srcdir}/cache/compiler/v${compiler_version}/wcsc-${arch}.tmp"
-  mv "${srcdir}/cache/compiler/v${compiler_version}/wcsc-${arch}.tmp" "${srcdir}/cache/compiler/v${compiler_version}/wcsc-${arch}"
-  chmod +x "${srcdir}/cache/compiler/v${compiler_version}/wcsc-${arch}"
-fi
-
-if [ ! -f "${srcdir}/cache/compiler/v${compiler_version}/wcc-${arch}.node" ];then
-  wget -c "https://github.com/msojocs/wx-compiler/releases/download/v${compiler_version}/wcc-${arch}.node" -O "${srcdir}/cache/compiler/v${compiler_version}/wcc-${arch}.node.tmp"
-  mv "${srcdir}/cache/compiler/v${compiler_version}/wcc-${arch}.node.tmp" "${srcdir}/cache/compiler/v${compiler_version}/wcc-${arch}.node"
-fi
-
-if [ ! -f "${srcdir}/cache/compiler/v${compiler_version}/wcsc-${arch}.node" ];then
-  wget -c "https://github.com/msojocs/wx-compiler/releases/download/v${compiler_version}/wcsc-${arch}.node" -O "${srcdir}/cache/compiler/v${compiler_version}/wcsc-${arch}.node.tmp"
-  mv "${srcdir}/cache/compiler/v${compiler_version}/wcsc-${arch}.node.tmp" "${srcdir}/cache/compiler/v${compiler_version}/wcsc-${arch}.node"
-fi
-
-cp "${srcdir}/cache/compiler/v${compiler_version}"/wcc-${arch} "${package_dir}/node_modules/wcc-exec/wcc"
-cp "${srcdir}/cache/compiler/v${compiler_version}"/wcsc-${arch} "${package_dir}/node_modules/wcc-exec/wcsc"
+cp "${compiler_cache}/wcc-${arch}" "${package_dir}/node_modules/wcc-exec/wcc"
+cp "${compiler_cache}/wcsc-${arch}" "${package_dir}/node_modules/wcc-exec/wcsc"
 cd "${package_dir}/node_modules/wcc-exec" && chmod +x wcc wcsc && rm -rf wcc.exe wcsc.exe
 
 # 修复：可视化用的wcc,wcsc
 echo "fix: wcc,wcsc"
-\cp "${srcdir}/cache/compiler/v${compiler_version}"/wcc-${arch}.node "${package_dir}/node_modules/wcc-electron/build/Release"
+\cp "${compiler_cache}/wcc-${arch}.node" "${package_dir}/node_modules/wcc-electron/build/Release"
 cd "${package_dir}/node_modules/wcc-electron/build/Release" && rm -rf wcc.node && mv wcc-${arch}.node wcc.node
-\cp "${srcdir}/cache/compiler/v${compiler_version}"/wcsc-${arch}.node "${package_dir}/node_modules/wcc-electron/build/Release"
+\cp "${compiler_cache}/wcsc-${arch}.node" "${package_dir}/node_modules/wcc-electron/build/Release"
 cd "${package_dir}/node_modules/wcc-electron/build/Release" && rm -rf wcsc.node && mv wcsc-${arch}.node wcsc.node
 
 $root_dir/tools/asar-helper.sh pack

@@ -96,7 +96,7 @@ docker run -d \
 # 可将master替换为具体版本号
 ```
 
-其它请参考: [FAQ](docs/FAQ.MD)
+其它请参考: [FAQ](https://github.com/msojocs/wechat-web-devtools-linux/blob/master/docs/FAQ.MD)
 
 # 界面截图
 
