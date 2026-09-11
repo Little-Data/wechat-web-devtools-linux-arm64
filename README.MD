@@ -12,6 +12,7 @@
 
 [![wechat-tools](https://img.shields.io/badge/wechat--devtools-2.02.2608070-blue)](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html)
 [![Build WeChat DevTools (ARM64)](https://github.com/Little-Data/wx-compiler-arm64/actions/workflows/build-arm64.yml/badge.svg)](https://github.com/Little-Data/wx-compiler-arm64/actions/workflows/build-arm64.yml)
+[![Build WeChat DevTools Nightly (ARM64)](https://github.com/Little-Data/wx-compiler-arm64/actions/workflows/build-nightly-arm64.yml/badge.svg)](https://github.com/Little-Data/wx-compiler-arm64/actions/workflows/build-nightly-arm64.yml)
 
 这是微信开发者工具 Linux arm64 版
   
@@ -26,6 +27,21 @@
 
 本项目是一个完整的搭建Linux下可用的“微信开发者工具”的脚本和工具集，
 用于在 Linux arm64 下搭建可以持续更新和使用的“微信开发者工具”。
+
+# 使用方法
+
+1. 可以在本项目的[Release](https://github.com/Little-Data/wechat-web-devtools-linux/releases)中，寻找已经构筑好了的软件包，下载使用
+2. 到[构建仓库](https://github.com/Little-Data/wx-compiler-arm64/actions)中下载构建好的附件
+
+# Nightly 开发版构建
+
+每晚同步对应的 Nightly 开发版，如果与前一次的版本相同则跳过构建。
+
+到 [这里](https://github.com/Little-Data/wx-compiler-arm64/actions/workflows/build-nightly-arm64.yml) 查看对应开发版，选择构建时间10-20分钟左右的项目，进入后在底部 Artifacts 区域中下载 `wechat-devtools-nightly-arm64.build` 文件
+
+**不登录下载？**
+
+已配置 nightly.link ，进入 actions 发现 Artifacts 没有下载地址，复制该页网址（如 `https://github.com/Little-Data/wx-compiler-arm64/actions/runs/123456789`）到 https://nightly.link 粘贴，下载 `wechat-devtools-nightly-arm64.build` 文件
 
 # 更新日志
 
@@ -49,11 +65,6 @@
 # CLI支持
 
 在项目的 `bin` 目录中有 `wechat-devtools-cli` 脚本，是微信开发者工具的命令行支持 的Linux版本。相关资料可以在[微信CLI命令行V2](https://developers.weixin.qq.com/miniprogram/dev/devtools/cli.html)上找到。
-
-# 使用方法
-
-1. 可以在本项目的[Release](https://github.com/Little-Data/wechat-web-devtools-linux/releases)中，寻找已经构筑好了的软件包，下载使用。
-2. 到[构建仓库](https://github.com/Little-Data/wx-compiler-arm64/actions)中下载构建好的附件
 
 # 自行构建
 
