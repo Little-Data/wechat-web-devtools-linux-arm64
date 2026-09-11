@@ -28,6 +28,10 @@
 本项目是一个完整的搭建Linux下可用的“微信开发者工具”的脚本和工具集，
 用于在 Linux arm64 下搭建可以持续更新和使用的“微信开发者工具”。
 
+# 发行版日志
+
+`stable_version_note.txt` 和 `nightly_version_note.txt` 的更新说明是直接从官方获取的，releases 中除特别说明均为官方更新日志
+
 # 使用方法
 
 1. 可以在本项目的[Release](https://github.com/Little-Data/wechat-web-devtools-linux/releases)中，寻找已经构筑好了的软件包，下载使用
